@@ -1,55 +1,65 @@
-import { Subscription } from "rxjs";
+import {
+  catchError,
+  debounceTime,
+  EMPTY,
+  filter,
+  map,
+  Observable,
+  switchMap,
+  throwError,
+} from "rxjs";
 import { BookService } from "./../../services/book.service";
-import { Component, OnDestroy } from "@angular/core";
+import { Component } from "@angular/core";
 import { Book, Item } from "src/app/interfaces";
 import { BookVolumeInfo } from "src/app/models/bookVolumeInfo";
+import { FormControl } from "@angular/forms";
 
 @Component({
   selector: "app-lista-livros",
   templateUrl: "./lista-livros.component.html",
   styleUrls: ["./lista-livros.component.css"],
 })
-export class ListaLivrosComponent implements OnDestroy {
+export class ListaLivrosComponent {
   //#region public attributes
-  public listaLivros: Book[];
-  public searchField: string;
+  public searchField: FormControl;
   public isLoading: boolean;
+  public searchedBooks$: Observable<Book[]>;
+  public errorMessage: string;
   //#endregion
 
   //#region private attributes
-  private bookSubscription: Subscription;
   //#endregion
 
   //#region contructor
   constructor(private bookService: BookService) {
-    this.searchField = "";
+    this.searchField = new FormControl();
     this.isLoading = false;
+    this.searchedBooks$ = this.searchBooks();
+    this.errorMessage = "";
   }
   //#endregion
 
   //#region angular lifecycle
-  ngOnDestroy(): void {
-    this.bookSubscription.unsubscribe();
-  }
   //#endregion
 
   //# region public methods
-  public searchBooks() {
-    this.isLoading = true;
-    this.bookSubscription = this.bookService
-      .searchBooks(this.searchField)
-      .subscribe({
-        next: (resp) => (this.listaLivros = this.resultForBookList(resp)),
-        error: (err) => {
-          console.log(err);
-          this.isLoading = false;
-        },
-        complete: () => (this.isLoading = false),
-      });
-  }
   //#endregion
 
   //# region private methods
+  private searchBooks(): Observable<Book[]> {
+    return this.searchField.valueChanges.pipe(
+      debounceTime(500),
+      filter((input) => input.length >= 3),
+      switchMap((input) => this.bookService.searchBooks(input)),
+      map((items) => this.resultForBookList(items)),
+      catchError(() => {
+        this.errorMessage =
+          "Ops, estamos com problemas internos. Tente novamente mais tarde.";
+        return EMPTY;
+      })
+    );
+  }
+
   private resultForBookList(items: Item[]): BookVolumeInfo[] {
     return items.map((item) => {
       return new BookVolumeInfo(item);

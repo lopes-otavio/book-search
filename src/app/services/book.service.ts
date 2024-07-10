@@ -1,6 +1,6 @@
 import { HttpClient, HttpParams } from "@angular/common/http";
 import { Injectable } from "@angular/core";
-import { map, Observable, tap } from "rxjs";
+import { map, Observable, ReplaySubject } from "rxjs";
 import { BookResult, Item } from "../interfaces";
 
 @Injectable({
@@ -14,8 +14,8 @@ export class BookService {
   }
 
   public searchBooks(input: string): Observable<Item[]> {
-    if (!input) {
-      return null;
+    if (!input || input == "") {
+      return new ReplaySubject();
     }
 
     const params: HttpParams = new HttpParams().append("q", input);
