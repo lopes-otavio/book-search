@@ -14,10 +14,6 @@ export class BookService {
   }
 
   public searchBooks(input: string): Observable<BookResult> {
-    if (!input || input == "") {
-      return new ReplaySubject();
-    }
-
     const params: HttpParams = new HttpParams().append("q", input);
     return this.httpClient.get<BookResult>(this.resourceUrl, { params });
   }
