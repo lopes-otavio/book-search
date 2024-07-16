@@ -13,14 +13,12 @@ export class BookService {
     this.resourceUrl = "https://www.googleapis.com/books/v1/volumes";
   }
 
-  public searchBooks(input: string): Observable<Item[]> {
+  public searchBooks(input: string): Observable<BookResult> {
     if (!input || input == "") {
       return new ReplaySubject();
     }
 
     const params: HttpParams = new HttpParams().append("q", input);
-    return this.httpClient
-      .get<BookResult>(this.resourceUrl, { params })
-      .pipe(map((resp) => resp.items));
+    return this.httpClient.get<BookResult>(this.resourceUrl, { params });
   }
 }
